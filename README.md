@@ -1,67 +1,152 @@
-# Getting Started ⚡️ Bolt for JavaScript
-> Slack app example from 📚 [Getting started with Bolt for JavaScript tutorial][1]
+# Deploying to AWS Lambda ⚡️ Bolt for JavaScript
+
+> Slack app example for using the AwsLambdaReceiver of Bolt for JavaScript
 
 ## Overview
 
-This is a Slack app built with the [Bolt for JavaScript framework][2] that showcases
-responding to events and interactive buttons.
+This is an example app that updates the [Getting Started ⚡️ Bolt for JavaScript app][bolt-app] to use the AwsLambdaReceiver and be deployed to [AWS Lambda][aws-lambda] using the [Serverless Framework][serverless-framework].
+You can learn how to build this example app by following our 📚 [Deploying to AWS Lambda guide][bolt-guide-aws-lambda].
 
-## Running locally
+Before you begin, you may want to follow our [Getting Started guide][bolt-guide] to learn how to build your first Slack app using the [Bolt for JavaScript framework][bolt-website].
 
-### 0. Create a new Slack App
+## Getting started
 
-- Go to https://api.slack.com/apps
-- Click **Create App**
-- Choose a workspace
-- Enter App Manifest using contents of `manifest.yaml`
-- Click **Create**
+- [Deploying to AWS Lambda ⚡️ Bolt for JavaScript](#deploying-to-aws-lambda-️-bolt-for-javascript)
+  - [Overview](#overview)
+  - [Getting started](#getting-started)
+  - [1. Set up AWS credentials](#1-set-up-aws-credentials)
+    - [Install and configure AWS CLI](#install-and-configure-aws-cli)
+  - [2. Set up local project](#2-set-up-local-project)
+  - [3. Create a Slack app](#3-create-a-slack-app)
+    - [Create an app on api.slack.com](#create-an-app-on-apislackcom)
+    - [Export environment variables](#export-environment-variables)
+  - [4. Deploy to AWS Lambda](#4-deploy-to-aws-lambda)
+  - [5. Update Slack app settings](#5-update-slack-app-settings)
+  - [6. Test your Slack app](#6-test-your-slack-app)
+  - [7. Develop on local machine](#7-develop-on-local-machine)
 
-Once the app is created click **Install to Workspace** 
-Then scroll down in Basic Info and click **Generate Token and Scopes** with both scopes
+## 1. Set up AWS credentials
 
-### 1. Setup environment variables
+### Install and configure AWS CLI
+
+Follow Amazon's guides to [install the AWS CLI v2 for macOS, Windows, or Linux][aws-cli-install] and [create a new IAM User][aws-cli-configure-user].
+
+When you have the AWS CLI and user credentials, then configure your local machine with the command:
 
 ```zsh
-# Replace with your bot and app token
-export SLACK_BOT_TOKEN=<your-bot-token> # from the OAuth section
-export SLACK_APP_TOKEN=<your-app-level-token> # from the Basic Info App Token Section
+aws configure
 ```
 
-### 2. Setup your local project
+## 2. Set up local project
+
+You can install the app's local development dependencies with the following command:
 
 ```zsh
-# Clone this project onto your machine
-git clone https://github.com/slackapi/bolt-js-getting-started-app.git
-
-# Change into the project
-cd bolt-js-getting-started-app/
-
-# Install the dependencies
 npm install
 ```
 
-### 3. Start servers
+You may also want to [install ngrok][ngrok-install] to start a local tunnel for local development.
+
+Ensure you can correctly run the `serverless` command from your terminal. You may have to reference it from the `./node_modules/.bin/serverless` location within the project. If that still doesn't work, refer to the [Serverless Getting Started documentation][serverless-install] on how to install the Serverless framework.
+
+## 3. Create a Slack app
+
+### Create an app on api.slack.com
+
+1. Go to https://api.slack.com/apps
+1. Select **Create New App**
+    * Name your app, _don't worry you can change it later!_
+1. Select **OAuth & Permissions**
+    1. Scroll down to **Bot Token Scopes**
+    1. Add the following bot scopes:
+        1. Add the scope `app_mentions:read`
+        1. Add the scope `channels:history`
+        1. Add the scope `chat:write`
+        1. Add the scope `groups:history`
+        1. Add the scope `im:history`
+        1. Add the scope `mpim:history`
+    1. Select **Install App to Workspace** at the top of the page
+
+### Export environment variables
+
 ```zsh
-npm run start
+export SLACK_SIGNING_SECRET=<your-signing-secret> # Slack app settings > "Basic Information"
+export SLACK_BOT_TOKEN=<your-xoxb-bot-token>      # Slack app settings > "OAuth & Permissions"
 ```
 
-### 4. Test
+## 4. Deploy to AWS Lambda
 
-Go to the installed workspace and type **Hello** in a DM to your new bot. You can also type **Hello** in a channel where the bot is present
+Run the following the command to deploy to AWS Lambda:
 
-## Contributing
+```zsh
+serverless deploy
+# ...
+# endpoints:
+#  POST - https://d5c0t1xad4.execute-api.us-east-1.amazonaws.com/dev/slack/events
+```
 
-### Issues and questions
+_Please note the endpoint `https://{your-domain}.amazonaws.com/dev/slack/events` because we'll use it in the next section._
 
-Found a bug or have a question about this project? We'd love to hear from you!
+## 5. Update Slack app settings
 
-1. Browse to [slackapi/bolt-js/issues][4]
-1. Create a new issue
-1. Select the `[x] examples` category
+Now that your Slack app is deployed, you can register your AWS Lambda endpoint with the Slack API:
 
-See you there and thanks for helping to improve Bolt for everyone!
+1. Go to https://api.slack.com/apps
+1. Select your app
+1. Select **Event Subscriptions**
+    1. Enable **Events**
+    1. Set the **Request URL** to `https://{your-domain}.amazonaws.com/dev/slack/events`
+    1. Scroll down to **Subscribe to Bot Events**
+    1. Add the following bot events:
+        - `app_mention`
+        - `message.channels`
+        - `message.groups`
+        - `message.im`
+        - `message.mpim`
+    1. Select **Save Changes**
 
-[1]: https://slack.dev/bolt-js/tutorial/getting-started
-[2]: https://slack.dev/bolt-js/
-[3]: https://slack.dev/bolt-js/tutorial/getting-started#setting-up-events
-[4]: https://github.com/slackapi/bolt-js/issues/new
+## 6. Test your Slack app
+
+You can test your app by opening a Slack workspace and saying "hello" (lower-case):
+
+> 💬 hello
+>
+> 🤖 Hey there @Jane!
+
+_Remember, your app must be in the channel or DM where you say hello._
+
+## 7. Develop on local machine
+
+Open a terminal session to listen for incoming requests:
+
+```zsh
+serverless offline --noPrependStageInUrl
+```
+
+Open another terminal session to proxy Slack API requests locally:
+
+```zsh
+# -subdomain= is available only for paid accounts
+ngrok http 3000 -subdomain=my-unique-name
+```
+
+Update your [Slack app settings][slack-app-settings] to use your ngrok address:
+1. **Interactivity & Shortcuts**
+    1. Set the **Request URL** to `https://my-unique-name.ngrok.io/slack/events`
+1. **Event Subscriptions**
+    1. Set the **Request URL** to `https://my-unique-name.ngrok.io/slack/events`
+
+Follow the steps to [test your app](#6-test-your-slack-app).
+
+[aws-cli-install]: https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html
+[aws-cli-configure]: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html
+[aws-cli-configure-user]: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html#cli-configure-quickstart-creds
+[aws-lambda]: https://aws.amazon.com/lambda/
+[bolt-app]: https://github.com/slackapi/bolt-js-getting-started-app
+[bolt-guide]: https://slack.dev/bolt-js/tutorial/getting-started
+[bolt-guide-aws-lambda]: https://slack.dev/bolt-js/deployments/aws-lambda
+[bolt-website]: https://slack.dev/bolt-js/
+[ngrok-install]: https://api.slack.com/tutorials/tunneling-with-ngrok
+[serverless-framework]: https://serverless.com/
+[serverless-install]: https://www.serverless.com/framework/docs/getting-started/
+[slack-app-settings]: https://api.slack.com/apps
