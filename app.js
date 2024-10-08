@@ -24,6 +24,10 @@ app.function('function_get_account_info', async ({ client, inputs, complete, fai
     console.log(`Inputs: ${JSON.stringify(inputs)}`);
     const { user_id, channel_id, account_identifier, account_environment } = inputs;
 
+    const sleepTimeout = 3000;
+    // add a sleep for X seconds
+    await new Promise(resolve => setTimeout(resolve, sleepTimeout));
+
     await client.chat.postEphemeral({
       channel: channel_id,
       user: user_id,
