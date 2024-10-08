@@ -120,14 +120,13 @@ _Remember, your app must be in the channel or DM where you say hello._
 Open a terminal session to listen for incoming requests:
 
 ```zsh
-serverless offline --noPrependStageInUrl
+npm run serverless
 ```
 
 Open another terminal session to proxy Slack API requests locally:
 
 ```zsh
-# -subdomain= is available only for paid accounts
-ngrok http 3000 -subdomain=my-unique-name
+ngrok http 3000
 ```
 
 Update your [Slack app settings][slack-app-settings] to use your ngrok address:
