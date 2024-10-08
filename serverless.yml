@@ -1,5 +1,5 @@
 service: serverless-aws-lambda-receiver-bolt-js
-frameworkVersion: '2'
+frameworkVersion: '3'
 useDotenv: true
 custom:
   serverless-offline:

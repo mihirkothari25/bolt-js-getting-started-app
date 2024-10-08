@@ -19,42 +19,23 @@ const app = new App({
   // processBeforeResponse: true
 });
 
-// Listens to incoming messages that contain "hello"
-app.message('hello', async ({ message, say }) => {
-  // say() sends a message to the channel where the event was triggered
-  await say({
-    blocks: [
-      {
-        "type": "section",
-        "text": {
-          "type": "mrkdwn",
-          "text": `Hey there <@${message.user}>!`
-        },
-        "accessory": {
-          "type": "button",
-          "text": {
-            "type": "plain_text",
-            "text": "Click Me"
-          },
-          "action_id": "button_click"
-        }
-      }
-    ],
-    text: `Hey there <@${message.user}>!`
-  });
-});
+app.function('function_get_account_info', async ({ client, inputs, complete, fail }) => {
+  try {
+    console.log(`Inputs: ${JSON.stringify(inputs)}`);
+    const { user_id, channel_id, account_identifier, account_environment } = inputs;
 
-// Listens for an action from a button click
-app.action('button_click', async ({ body, ack, say }) => {
-  await ack();
+    await client.chat.postEphemeral({
+      channel: channel_id,
+      user: user_id,
+      text: `Greetings <@${user_id}>! You had requested account info for ${account_identifier} in ${account_environment}. Let me fetch that for you...`
+    });
 
-  await say(`<@${body.user.id}> clicked the button`);
-});
-
-// Listens to incoming messages that contain "goodbye"
-app.message('goodbye', async ({ message, say }) => {
-  // say() sends a message to the channel where the event was triggered
-  await say(`See ya later, <@${message.user}> :wave:`);
+    await complete({ outputs: { user_id } });
+  }
+  catch (error) {
+    console.error(error);
+    fail({ error: `Failed to complete the step: ${error}` });
+  }
 });
 
 // Handle the Lambda function event
